@@ -114,7 +114,7 @@ module TsTooltip {
     }
 
     generate() {
-      var startTime = performance ? performance.now() : Date.now();
+      var startTime = window.performance ? window.performance.now() : Date.now();
 
       this.testWorker = new Worker("worker.js");
       this.testWorker.onmessage = result => {
@@ -125,7 +125,7 @@ module TsTooltip {
           this.processResult(result.data);
           this.count--;
           if (this.count == 0) {
-             var endTime = performance ? performance.now() : Date.now();
+             var endTime = window.performance ? window.performance.now() : Date.now();
 
              console.log("Completed in: " + (endTime - startTime) + "ms");
           }
