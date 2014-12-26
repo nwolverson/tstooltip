@@ -38,7 +38,6 @@ module TsTooltip {
         this.testWorker.postMessage({ sort: 'statement', text: text, id: this.blocks.length});
         this.blocks.push({text: text, elt: $el});
       });
-
       $("code").each((i, el) => {
         var $el = $(el);
         if ($el.hasClass("ts-checked"))
@@ -121,6 +120,7 @@ module TsTooltip {
         console.log("Message from worker: "+result.data);
         if (result.data == "ready") {
           this.queueChecks();
+
         } else {
           this.processResult(result.data);
           this.count--;

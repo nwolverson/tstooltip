@@ -5,41 +5,29 @@ importScripts('lib/typescriptServices.js');
 module TsChecker {
     var scriptName = 'script.ts';
 
-    class Snapshot implements ts.ScriptSnapshotShim {
-
-        getText(start: number, end: number): string {
-          return this.body.substr(start, end);
-        }
-        getLength(): number { return this.body.length; }
-        getLineStartPositions(): string{
-            return JSON.stringify( TypeScript.LineMap1.fromString(this.body));
-        }
-        getChangeRange(oldSnapshot: ts.ScriptSnapshotShim): string {
-          return null;
-        }
-
-        constructor(public name : string, public body : string) {
-
-        }
-    }
-
-    class TestShimHost implements ts.LanguageServiceShimHost {
-        files : { [ fileName : string ] : { file: Snapshot; ver: number} } = {}
+    class TestHost implements ts.LanguageServiceHost {
+        files : { [ fileName : string ] : { file: ts.IScriptSnapshot; ver: number} } = {}
 
         log(s: string) {
             console.log(s);
         }
-        getCompilationSettings(): string {
-            return JSON.stringify(ts.getDefaultCompilerOptions());
+        trace(s:string) {
+          console.info(s);
         }
-        getScriptFileNames() : string {
+        error(s: string) {
+          console.error(s);
+        }
+        getCompilationSettings(): ts.CompilerOptions {
+            return ts.getDefaultCompilerOptions();
+        }
+        getScriptFileNames() : string[] {
           var names : string[] = [];
           for (var name in this.files) {
             if (this.files.hasOwnProperty(name)) {
               names.push(name);
             }
           }
-          return JSON.stringify(names);
+          return names;
         }
         getScriptVersion(fileName: string): string {
             var ver = this.files[fileName].ver;
@@ -48,13 +36,13 @@ module TsChecker {
         getScriptIsOpen(fileName: string): boolean {
             return true;
         }
-        getScriptSnapshot(fileName: string): ts.ScriptSnapshotShim {
+        getScriptSnapshot(fileName: string): ts.IScriptSnapshot {
             return this.files[fileName].file;
         }
         getLocalizedDiagnosticMessages(): string {
             return JSON.stringify({});
         }
-        getCancellationToken(): ts.CancellationToken {
+        getCancellationToken() {
             return { isCancellationRequested : () => false };
         }
         getCurrentDirectory(): string {
@@ -65,7 +53,8 @@ module TsChecker {
         }
 
         addFile(fileName : string, body: string) {
-          var snap = new Snapshot(fileName, body);
+          var snap = ts.ScriptSnapshot.fromString(body);
+          snap.getChangeRange = _ => undefined;
           var existing = this.files[fileName];
           if (existing){
             this.files[fileName].ver++;
@@ -79,8 +68,8 @@ module TsChecker {
 
     export class Checker {
         files : { [ fileName : string ] : string; } = {}
-        private host = new TestShimHost()
-        private languageService : ts.LanguageService
+        private host = new TestHost();
+        private languageService = ts.createLanguageService(this.host, ts.createDocumentRegistry());
 
         init(callback: () => void) {
             var xhr = new XMLHttpRequest();
@@ -97,10 +86,6 @@ module TsChecker {
 
         initHost(input: string) {
           this.host.addFile(scriptName, input);
-          if (!this.languageService){
-            var f = new TypeScript.Services.TypeScriptServicesFactory();
-            this.languageService = f.createLanguageServiceShim(this.host).languageService;
-          }
         }
 
         checkExpression(s: string) {
@@ -116,9 +101,12 @@ module TsChecker {
               if (output.outputFiles.length != 1) {
                   throw "Should be 1 output file";
               }
-              var ti = this.languageService.getTypeAtPosition(scriptName, input.indexOf("expr"));
-              var type = ti.memberName.toString();
-              return { error : false, output: output.outputFiles[0].text, type: type };
+              debugger;
+              return null;
+              //var ti = this.languageService.getTypeAtPosition(scriptName, input.indexOf("expr"));
+
+              //var type = ti.memberName.toString();
+              //return { error : false, output: output.outputFiles[0].text, type: type };
           }
         }
 
@@ -131,11 +119,13 @@ module TsChecker {
 
           } else {
             var classifications = this.languageService.getSyntacticClassifications(scriptName,
-              new TypeScript.TextSpan(0,s.length));
+              { start: 0, length: s.length});
             var idSpans = classifications.filter(c => c.classificationType === ts.ClassificationTypeNames.text)
               .map(c => c.textSpan);
             var typed = idSpans.map(span => {
-              var type = this.languageService.getTypeAtPosition(scriptName, span.start());
+              //var type = this.languageService.getTypeAtPosition(scriptName, span.start());
+              var type = undefined;
+              debugger;
               if (!type) {
                 return undefined;
               } else {
