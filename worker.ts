@@ -18,7 +18,10 @@ module TsChecker {
           console.error(s);
         }
         getCompilationSettings(): ts.CompilerOptions {
-            return ts.getDefaultCompilerOptions();
+            var opts = ts.getDefaultCompilerOptions();
+            //opts.declaration = true;
+            opts.diagnostics = true;
+            return opts;
         }
         getScriptFileNames() : string[] {
           var names : string[] = [];
@@ -63,12 +66,47 @@ module TsChecker {
             this.files[fileName] = {ver: 1, file: snap};
           }
         }
+    }
 
+    class TestCompilerHost implements ts.CompilerHost {
+      files : { [ fileName : string ] : { file: ts.IScriptSnapshot; ver: number} } = {}
+
+      getSourceFile(filename: string, languageVersion: ts.ScriptTarget, onError?: (message: string) => void): ts.SourceFile {
+        var f = this.files[filename];
+        if (!f) return null;
+        var sourceFile = ts.createLanguageServiceSourceFile(filename, f.file, ts.ScriptTarget.ES5, f.ver.toString(), true, false);
+        return sourceFile;
+      }
+      getDefaultLibFilename = (options: ts.CompilerOptions) => "lib";
+      /*getCancellationToken?(): CancellationToken {
+        return { isCancellationRequested : () => false };
+      }*/
+      writeFile(filename: string, data: string, writeByteOrderMark: boolean, onError?: (message: string) => void): void {
+          debugger;
+      }
+      getCurrentDirectory = () => "";
+      getCanonicalFileName = (fileName: string) => fileName;
+      useCaseSensitiveFileNames = () => true;
+      getNewLine = () => "\n";
+
+
+      addFile(fileName : string, body: string) {
+        var snap = ts.ScriptSnapshot.fromString(body);
+        snap.getChangeRange = _ => undefined;
+        var existing = this.files[fileName];
+        if (existing){
+          this.files[fileName].ver++;
+          this.files[fileName].file = snap
+          } else {
+            this.files[fileName] = {ver: 1, file: snap};
+          }
+        }
     }
 
     export class Checker {
         files : { [ fileName : string ] : string; } = {}
         private host = new TestHost();
+        private compilerHost = new TestCompilerHost();
         private languageService = ts.createLanguageService(this.host, ts.createDocumentRegistry());
 
         init(callback: () => void) {
@@ -77,6 +115,7 @@ module TsChecker {
                 var response = xhr.responseText;
                 this.files["lib.d.ts"] = response;
                 this.host.addFile("lib.d.ts", this.files["lib.d.ts"]);
+                this.compilerHost.addFile("lib.d.ts", this.files["lib.d.ts"]);
 
                 callback();
             };
@@ -86,27 +125,28 @@ module TsChecker {
 
         initHost(input: string) {
           this.host.addFile(scriptName, input);
+          this.compilerHost.addFile(scriptName, input);
         }
 
         checkExpression(s: string) {
           var input = "var expr = (" + s + ");";
           this.initHost(input);
 
-          var output = this.languageService.getEmitOutput(scriptName);
-          if (output.emitOutputStatus != 0) {
-              var diag = this.languageService.getSemanticDiagnostics(scriptName);
-              var result = diag.map((x) => x.messageText).join("\n");
-              return { error: true, output: result, type: null };
-          } else {
-              if (output.outputFiles.length != 1) {
-                  throw "Should be 1 output file";
-              }
-              debugger;
-              return null;
-              //var ti = this.languageService.getTypeAtPosition(scriptName, input.indexOf("expr"));
+          var program = ts.createProgram([scriptName], this.host.getCompilationSettings(), this.compilerHost);
+          var typeChecker = program.getTypeChecker(true);
 
-              //var type = ti.memberName.toString();
-              //return { error : false, output: output.outputFiles[0].text, type: type };
+          var sf = program.getSourceFile(scriptName);
+          var diagnostics = typeChecker.getDiagnostics(sf);
+
+          if (diagnostics.length > 0) {
+            var result = diagnostics.map(d => d.messageText).join("\n");
+            return { error: true, output: result, type: null };
+          } else {
+            var type = typeChecker.getTypeAtLocation(sf.getNamedDeclarations()[0]);
+            return {
+              error: false,
+              type: typeChecker.typeToString(type)
+            };
           }
         }
 
@@ -114,29 +154,36 @@ module TsChecker {
         {
           this.initHost(s);
 
-          var output = this.languageService.getEmitOutput(scriptName);
-          if (output.emitOutputStatus != 0) {
+          var program = ts.createProgram([scriptName], this.host.getCompilationSettings(), this.compilerHost);
+          var typeChecker = program.getTypeChecker(true);
 
-          } else {
-            var classifications = this.languageService.getSyntacticClassifications(scriptName,
-              { start: 0, length: s.length});
-            var idSpans = classifications.filter(c => c.classificationType === ts.ClassificationTypeNames.text)
-              .map(c => c.textSpan);
-            var typed = idSpans.map(span => {
-              //var type = this.languageService.getTypeAtPosition(scriptName, span.start());
-              var type = undefined;
-              debugger;
-              if (!type) {
-                return undefined;
-              } else {
-                return {
-                  pos: {start: type.textSpan.start(), end: type.textSpan.end() }, // was span
-                  type: { fullSymbolName: type.fullSymbolName, kind: type.kind, memberName : type.memberName.toString() }
-                };
-              }
-            });
-            return typed.filter(x => x !== undefined);
-          }
+          var sf = program.getSourceFile(scriptName);
+          var diagnostics = typeChecker.getDiagnostics(sf);
+
+          var nodes = [];
+          function allNodes(n) {
+            ts.forEachChild(n, n => { nodes.push(n); allNodes(n); return false; })
+          };
+          allNodes(sf);
+          var idNodes = nodes.filter(n => n.kind === ts.SyntaxKind.Identifier);
+
+          var typed = idNodes.map(n => {
+              var type = typeChecker.getTypeAtLocation(n);
+              return {
+                pos: { start: n.pos, length: n.end - n.pos },
+                type: {
+                    fullSymbolName: n.text,
+                    kind: type.flags,
+                    memberName: typeChecker.typeToString(type)
+                  }
+              };
+          });
+
+          return typed;
+          //var classifications = this.languageService.getSyntacticClassifications(scriptName, { start: 0, length: s.length});
+          //var idSpans = classifications.filter(c => c.classificationType === ts.ClassificationTypeNames.text).map(c => c.textSpan);
+          //var info = this.languageService.getQuickInfoAtPosition(scriptName, span.start);
+          //var def = this.languageService.getDefinitionAtPosition(scriptName, span.start)[0];
         }
     }
 }

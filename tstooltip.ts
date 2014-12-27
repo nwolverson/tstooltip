@@ -71,16 +71,19 @@ module TsTooltip {
         if (!res) {
           return;
         }
+        function intersects(span : ts.TextSpan, start: number, length: number) {
+          return span.start <= start+length && span.start + span.length >= start;
+        }
         TextIterator.iterate($el[0], (elt, textpos) => {
           var text = elt.nodeValue;
 
           var curPos = 0;
           var chunks = [];
           res.forEach(r => {
-            var span = TypeScript.TextSpan.fromBounds(r.pos.start, r.pos.end);// r.type.textSpan;
-            if (span.intersectsWith(textpos, text.length)) {
-              var start = Math.max(span.start() - textpos, curPos);
-              var end = Math.min(span.end() - textpos, text.length);
+            var span = r.pos; //TypeScript.TextSpan.fromBounds(r.pos.start, r.pos.end);// r.type.textSpan;
+            if (intersects(span, textpos, text.length)) {
+              var start = Math.max(span.start - textpos, curPos);
+              var end = Math.min((span.start+span.length) - textpos, text.length);
 
               // Span reported by type.textSpan includes leading whitespace
               while (start <= end && text.charAt(start).search(/\s/) !== -1) {
@@ -95,6 +98,7 @@ module TsTooltip {
               elt.text(text.substring(start, end));
               elt.addClass("ts-typeinfo");
               var title = r.type.fullSymbolName + " (" + r.type.kind + "): "+ r.type.memberName.toString();
+              //var title = r.tooltipInfo;
               elt.attr("title", title);
               chunks.push(elt);
 
