@@ -5,70 +5,7 @@ importScripts('lib/typescriptServices.js');
 module TsChecker {
     var scriptName = 'script.ts';
 
-    class TestHost implements ts.LanguageServiceHost {
-        files : { [ fileName : string ] : { file: ts.IScriptSnapshot; ver: number} } = {}
-
-        log(s: string) {
-            console.log(s);
-        }
-        trace(s:string) {
-          console.info(s);
-        }
-        error(s: string) {
-          console.error(s);
-        }
-        getCompilationSettings(): ts.CompilerOptions {
-            var opts = ts.getDefaultCompilerOptions();
-            //opts.declaration = true;
-            opts.diagnostics = true;
-            return opts;
-        }
-        getScriptFileNames() : string[] {
-          var names : string[] = [];
-          for (var name in this.files) {
-            if (this.files.hasOwnProperty(name)) {
-              names.push(name);
-            }
-          }
-          return names;
-        }
-        getScriptVersion(fileName: string): string {
-            var ver = this.files[fileName].ver;
-            return ver.toString();
-        }
-        getScriptIsOpen(fileName: string): boolean {
-            return true;
-        }
-        getScriptSnapshot(fileName: string): ts.IScriptSnapshot {
-            return this.files[fileName].file;
-        }
-        getLocalizedDiagnosticMessages(): string {
-            return JSON.stringify({});
-        }
-        getCancellationToken() {
-            return { isCancellationRequested : () => false };
-        }
-        getCurrentDirectory(): string {
-            return "";
-        }
-        getDefaultLibFilename(): string {
-            return "lib";
-        }
-
-        addFile(fileName : string, body: string) {
-          var snap = ts.ScriptSnapshot.fromString(body);
-          snap.getChangeRange = _ => undefined;
-          var existing = this.files[fileName];
-          if (existing){
-            this.files[fileName].ver++;
-            this.files[fileName].file = snap
-          } else {
-            this.files[fileName] = {ver: 1, file: snap};
-          }
-        }
-    }
-
-    class TestCompilerHost implements ts.CompilerHost {
+    class CheckerCompilerHost implements ts.CompilerHost {
       files : { [ fileName : string ] : { file: ts.IScriptSnapshot; ver: number} } = {}
 
       getSourceFile(filename: string, languageVersion: ts.ScriptTarget, onError?: (message: string) => void): ts.SourceFile {
@@ -78,17 +15,13 @@ module TsChecker {
         return sourceFile;
       }
       getDefaultLibFilename = (options: ts.CompilerOptions) => "lib";
-      /*getCancellationToken?(): CancellationToken {
-        return { isCancellationRequested : () => false };
-      }*/
+
       writeFile(filename: string, data: string, writeByteOrderMark: boolean, onError?: (message: string) => void): void {
-          debugger;
       }
       getCurrentDirectory = () => "";
       getCanonicalFileName = (fileName: string) => fileName;
       useCaseSensitiveFileNames = () => true;
       getNewLine = () => "\n";
-
 
       addFile(fileName : string, body: string) {
         var snap = ts.ScriptSnapshot.fromString(body);
@@ -105,16 +38,13 @@ module TsChecker {
 
     export class Checker {
         files : { [ fileName : string ] : string; } = {}
-        private host = new TestHost();
-        private compilerHost = new TestCompilerHost();
-        private languageService = ts.createLanguageService(this.host, ts.createDocumentRegistry());
+        private compilerHost = new CheckerCompilerHost();
 
         init(callback: () => void) {
             var xhr = new XMLHttpRequest();
             xhr.onload = ev => {
                 var response = xhr.responseText;
                 this.files["lib.d.ts"] = response;
-                this.host.addFile("lib.d.ts", this.files["lib.d.ts"]);
                 this.compilerHost.addFile("lib.d.ts", this.files["lib.d.ts"]);
 
                 callback();
@@ -124,15 +54,20 @@ module TsChecker {
         }
 
         initHost(input: string) {
-          this.host.addFile(scriptName, input);
           this.compilerHost.addFile(scriptName, input);
+        }
+
+        compilerOptions() : ts.CompilerOptions {
+          var settings = ts.getDefaultCompilerOptions();
+          settings.diagnostics = true;
+          return settings;
         }
 
         checkExpression(s: string) {
           var input = "var expr = (" + s + ");";
           this.initHost(input);
 
-          var program = ts.createProgram([scriptName], this.host.getCompilationSettings(), this.compilerHost);
+          var program = ts.createProgram([scriptName], this.compilerOptions(), this.compilerHost);
           var typeChecker = program.getTypeChecker(true);
 
           var sf = program.getSourceFile(scriptName);
@@ -154,7 +89,7 @@ module TsChecker {
         {
           this.initHost(s);
 
-          var program = ts.createProgram([scriptName], this.host.getCompilationSettings(), this.compilerHost);
+          var program = ts.createProgram([scriptName], this.compilerOptions(), this.compilerHost);
           var typeChecker = program.getTypeChecker(true);
 
           var sf = program.getSourceFile(scriptName);

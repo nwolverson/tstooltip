@@ -107,8 +107,6 @@ module TsTooltip {
           });
           chunks.push(text.substring(curPos, text.length));
 
-          console.log(chunks);
-
           // can't seem to replaceWith
           $(elt).after(chunks);
           $(elt).remove();
@@ -121,7 +119,6 @@ module TsTooltip {
 
       this.testWorker = new Worker("worker.js");
       this.testWorker.onmessage = result => {
-        console.log("Message from worker: "+result.data);
         if (result.data == "ready") {
           this.queueChecks();
 
