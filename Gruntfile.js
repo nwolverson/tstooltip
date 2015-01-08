@@ -5,16 +5,17 @@ module.exports = function(grunt) {
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
 
-    ts: {
-      options: {
-
+    exec: {
+      tsc_clean: {
+        cmd: 'jake clean',
+        cwd: 'Typescript'
       },
-      tstooltip: {
-        src: ["tstooltip.ts"]
+      tsc: {
+        cmd: 'jake local',
+        cwd: 'Typescript'
       },
-      worker: {
-        src: ["worker.ts"]
-      }
+      tooltip: 'node TypeScript/built/local/tsc.js tstooltip.ts',
+      worker: 'node TypeScript/built/local/tsc.js worker.ts'
     },
 
     watch: {
@@ -28,12 +29,11 @@ module.exports = function(grunt) {
       js: ["tstooltip.js*", "worker.js*"]
     }
   });
-  //
-  // // Load the plugin that provides the "uglify" task.
-  grunt.loadNpmTasks('grunt-ts');
+
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-contrib-clean');
+  grunt.loadNpmTasks('grunt-exec');
 
-  // Default task(s).
-  grunt.registerTask('default', ["ts:tstooltip", "ts:worker"]);
+  grunt.registerTask('default', ["exec:tsc", "exec:tooltip", "exec:worker"]);
+  grunt.registerTask('cleaner', ["clean", "exec:tsc_clean"])
 };
