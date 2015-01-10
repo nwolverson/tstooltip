@@ -80,7 +80,7 @@ module TsTooltip {
           var curPos = 0;
           var chunks = [];
           res.forEach(r => {
-            var span = r.pos; //TypeScript.TextSpan.fromBounds(r.pos.start, r.pos.end);// r.type.textSpan;
+            var span = r.pos; 
             if (intersects(span, textpos, text.length)) {
               var start = Math.max(span.start - textpos, curPos);
               var end = Math.min((span.start+span.length) - textpos, text.length);
@@ -98,7 +98,6 @@ module TsTooltip {
               elt.text(text.substring(start, end));
               elt.addClass("ts-typeinfo");
               var title = r.type.fullSymbolName + " (" + r.type.kind + "): "+ r.type.memberName.toString();
-              //var title = r.tooltipInfo;
               elt.attr("title", title);
               chunks.push(elt);
 

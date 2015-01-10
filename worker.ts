@@ -115,10 +115,6 @@ module TsChecker {
           });
 
           return typed;
-          //var classifications = this.languageService.getSyntacticClassifications(scriptName, { start: 0, length: s.length});
-          //var idSpans = classifications.filter(c => c.classificationType === ts.ClassificationTypeNames.text).map(c => c.textSpan);
-          //var info = this.languageService.getQuickInfoAtPosition(scriptName, span.start);
-          //var def = this.languageService.getDefinitionAtPosition(scriptName, span.start)[0];
         }
     }
 }
