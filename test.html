@@ -8,6 +8,18 @@
     <link rel="stylesheet" type="text/css" href="bootstrap-3.2.0-dist/css/bootstrap.css">
     <link rel=stylesheet type="text/css" href="bootstrap-3.2.0-dist/css/bootstrap-theme.css">
 
+    <!-- highlightjs-->
+    <script src="lib/highlight.pack.js"></script>
+    <link rel="stylesheet" href="default.css">
+
+    <script>
+        $(document).ready(function () {
+            $('pre code.highlight').each(function (i, block) {
+                hljs.highlightBlock(block);
+            });
+        });
+    </script>
+
     <style type="text/css">
         code {
             color: black;
@@ -74,5 +86,18 @@ new c1().f();</code></pre>
   }
 }
 new c().f();</code></pre>
+
+        <h2>Together with syntax highlighting (highlight.js)</h2>
+        <pre><code class="highlight">class c {
+  x = 42;
+  name = "Fred";
+  f()
+  {
+    return this.name + this.x;
+  }
+}
+new c().f();</code></pre>
+
+
     </body>
 </html>
