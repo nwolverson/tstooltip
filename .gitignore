@@ -2,7 +2,3 @@ node_modules/
 .tscache/
 tstooltip.js
 worker.js
-typings/typescriptServices.d.ts
-typings/lib.d.ts
-lib/typescriptServices.js
-lib/tsc.js

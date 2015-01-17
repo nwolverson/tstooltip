@@ -71,7 +71,7 @@ module TsTooltip {
         if (!res) {
           return;
         }
-        function intersects(span : ts.TextSpan, start: number, length: number) {
+        function intersects(span, start: number, length: number) {
           return span.start <= start+length && span.start + span.length >= start;
         }
         TextIterator.iterate($el[0], (elt, textpos) => {
@@ -80,7 +80,7 @@ module TsTooltip {
           var curPos = 0;
           var chunks = [];
           res.forEach(r => {
-            var span = r.pos; 
+              var span: { start: number; length: number } = r.pos; 
             if (intersects(span, textpos, text.length)) {
               var start = Math.max(span.start - textpos, curPos);
               var end = Math.min((span.start+span.length) - textpos, text.length);

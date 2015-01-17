@@ -11,7 +11,8 @@ module TsChecker {
       getSourceFile(filename: string, languageVersion: ts.ScriptTarget, onError?: (message: string) => void): ts.SourceFile {
         var f = this.files[filename];
         if (!f) return null;
-        var sourceFile = ts.createLanguageServiceSourceFile(filename, f.file, ts.ScriptTarget.ES5, f.ver.toString(), true, false);
+	var text = f.file.getText(0, f.file.getLength());
+        var sourceFile = ts.createSourceFile(filename, text, ts.ScriptTarget.ES5, f.ver.toString(), true);
         return sourceFile;
       }
       getDefaultLibFilename = (options: ts.CompilerOptions) => "lib";
