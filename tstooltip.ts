@@ -80,7 +80,7 @@ module TsTooltip {
           var curPos = 0;
           var chunks = [];
           res.forEach(r => {
-              var span: { start: number; length: number } = r.pos; 
+              var span: { start: number; length: number } = r.pos;
             if (intersects(span, textpos, text.length)) {
               var start = Math.max(span.start - textpos, curPos);
               var end = Math.min((span.start+span.length) - textpos, text.length);
@@ -90,16 +90,20 @@ module TsTooltip {
                 start++;
               }
 
-              // Unconsumed text which won't be included in this span
-              chunks.push(text.substring(curPos, start));
+              if (start - curPos > 0) {
+                // Unconsumed text which won't be included in this span
+                chunks.push(text.substring(curPos, start));
+              }
 
-              // Remainder of text up to end is marked up for this span
-              var elt = $("<span>");
-              elt.text(text.substring(start, end));
-              elt.addClass("ts-typeinfo");
-              var title = r.type.fullSymbolName + " (" + r.type.kind + "): "+ r.type.memberName.toString();
-              elt.attr("title", title);
-              chunks.push(elt);
+              if (end - start > 0) {
+                // Remainder of text up to end is marked up for this span
+                var elt = $("<span>");
+                elt.text(text.substring(start, end));
+                elt.addClass("ts-typeinfo");
+                var title = r.type.fullSymbolName + " (" + r.type.kind + "): "+ r.type.memberName.toString();
+                elt.attr("title", title);
+                chunks.push(elt);
+              }
 
               curPos = end;
             }
