@@ -1,24 +1,13 @@
 <html>
 <head>
-<!--    <script src="tsc.js"></script>-->
-<script src="lib/jquery-1.9.1.js"></script>
-    <script src="lib/typescriptServices.js"></script>
-    <script src="tstooltip.js"></script>
-    <script src="bootstrap-3.2.0-dist/js/bootstrap.min.js"></script>
+    <script src="dist/tstooltip.js"></script>
+    <!--<script src="bootstrap-3.2.0-dist/js/bootstrap.min.js"></script>-->
     <link rel="stylesheet" type="text/css" href="bootstrap-3.2.0-dist/css/bootstrap.css">
     <link rel=stylesheet type="text/css" href="bootstrap-3.2.0-dist/css/bootstrap-theme.css">
 
     <!-- highlightjs-->
-    <script src="lib/highlight.pack.js"></script>
-    <link rel="stylesheet" href="default.css">
-
-    <script>
-        $(document).ready(function () {
-            $('pre code.highlight').each(function (i, block) {
-                hljs.highlightBlock(block);
-            });
-        });
-    </script>
+    <script src="dist/highlight.pack.js"></script>
+    <link rel="stylesheet" href="dist/solarized-light.css">
 
     <style type="text/css">
         code {
@@ -41,6 +30,9 @@
             border: 1px lightgray;
         */
         }
+        pre.highlight {
+            padding: 0;
+        }
         code.error {
         /*    background-color: rgb(255, 173, 173);*/
             /*color: #ffb4b4;*/
@@ -60,6 +52,7 @@
     </head>
     <body>
       <h2>Expressions</h2>
+      <p>Syntax error: <code>n: ) => 42;</code> </p>
     <p>Test code: <code>1 + 1</code>. More code: <code>1 + {}</code>.</p>
     <p>Check out this function: <code>(n : number) => n + 1</code></p>
         <ul>
@@ -88,7 +81,7 @@ new c1().f();</code></pre>
 new c().f();</code></pre>
 
         <h2>Together with syntax highlighting (highlight.js)</h2>
-        <pre><code class="highlight">class c {
+        <pre class="highlight"><code class="highlight">class c {
   x = 42;
   name = "Fred";
   f()
@@ -98,10 +91,14 @@ new c().f();</code></pre>
 }
 new c().f();</code></pre>
 
-<pre><code class="highlight">function f(n: number) {
+<pre class="highlight"><code class="highlight">function f(n: number) {
   return 42;
 }</code></pre>
 
-
+    <script>
+        document.querySelectorAll('pre code.highlight').forEach(function (block) {
+            hljs.highlightBlock(block);
+        })
+    </script>
     </body>
 </html>

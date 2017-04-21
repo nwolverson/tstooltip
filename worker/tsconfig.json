@@ -1,0 +1,12 @@
+{
+    "compilerOptions": {
+        "lib": [
+            "webworker", "es5"
+        ],
+        "module": "es2015",
+        "target": "es5",
+        "outDir": "../dist/worker",
+        "skipLibCheck": true,
+        "moduleResolution": "node"
+    }
+}

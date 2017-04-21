@@ -1,20 +1,29 @@
 {
   "name": "tstooltip",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "TypeScript tooltip info",
   "main": "index.html",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "run-s build:* bundle:* copy:*",
+    "build:tstooltip": "tsc -p src",
+    "build:worker": "tsc -p worker",
+    "bundle:tstooltip": "rollup -c --environment bundle:tstooltip",
+    "bundle:worker": "rollup -c --environment bundle:worker",
+    "copy:tslib": "cp node_modules/typescript/lib/lib.d.ts dist/",
+    "copy:lib": "cp lib/* dist/"
   },
   "author": "Nicholas Wolverson",
   "license": "ISC",
   "devDependencies": {
-    "grunt": "^0.4.5",
-    "grunt-contrib-clean": "^0.6.0",
-    "grunt-contrib-copy": "^0.7.0",
-    "grunt-contrib-watch": "^0.6.1",
-    "grunt-exec": "^0.4.6",
-    "grunt-ts": "~2.0.1",
-    "typescript": "^1.4.1"
+    "@types/jquery": "^2.0.41",
+    "npm-run-all": "^4.0.2",
+    "rollup": "^0.41.6",
+    "rollup-plugin-commonjs": "^8.0.2",
+    "rollup-plugin-node-builtins": "^2.1.0",
+    "rollup-plugin-node-resolve": "^3.0.0",
+    "typescript": "next"
+  },
+  "dependencies": {
+    "jquery": "^3.2.1"
   }
 }
